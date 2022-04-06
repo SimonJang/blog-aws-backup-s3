@@ -1,7 +1,9 @@
 import {Stack, StackProps, RemovalPolicy, Duration, Tags} from 'aws-cdk-lib';
 import {Construct} from 'constructs';
 import {Bucket, BlockPublicAccess, ObjectOwnership} from 'aws-cdk-lib/aws-s3';
-import {BackupPlan, BackupResource, BackupPlanRule} from 'aws-cdk-lib/aws-backup';
+import {BackupPlan, BackupPlanRule, BackupResource} from 'aws-cdk-lib/aws-backup';
+import {} from 'aws-cdk-lib/aws-iam';
+import {Schedule} from 'aws-cdk-lib/aws-events';
 
 type BlogS3BackupInfrastructureProperties = {
     bucketName: string;
@@ -25,27 +27,45 @@ export class BlogS3BackupInfrastructure extends Stack {
 
 		Tags.of(bucket).add('backup', 'true');
 
-        const continuousBackupPlan = BackupPlan.daily35DayRetention(this, 'continous-example-backup-plan');
+		const snapShotSchedule = new BackupPlanRule({
+			completionWindow: Duration.hours(12),
+			deleteAfter: Duration.days(3),
+			ruleName: 'daily-example-backup-7days-ret',
+			startWindow: Duration.hours(1),
+		});
 
-        continuousBackupPlan.addSelection('s3-bucket-selection-continuous', {
-            resources: [BackupResource.fromTag('backup', 'true')],
-			allowRestores: true,
-        });
+		const continuousSchedule = new BackupPlanRule({
+			enableContinuousBackup: true,
+			ruleName: 'pitr-s3',
+			scheduleExpression: Schedule.cron({
+				month: '*',
+				day: '*',
+				hour: '*',
+				minute: '0'
+			})
+		});
 
-        const snapshotBackupPlan = new BackupPlan(this, 'snapshot-example-backup-plan');
+        const backupPlan = new BackupPlan(
+			this,
+			's3-backup-plan',
+			{
+				backupPlanName: 's3-backup-plan',
+				backupPlanRules: [
+					snapShotSchedule,
+					continuousSchedule,
+				],
+			}
+		);
 
-        snapshotBackupPlan.addSelection('s3-bucket-selection-snapshot', {
-            resources: [BackupResource.fromTag('backup', 'true')],
-			allowRestores: true
-        });
-
-        snapshotBackupPlan.addRule(
-            new BackupPlanRule({
-                completionWindow: Duration.hours(12),
-                deleteAfter: Duration.days(3),
-                ruleName: 'daily-example-backup-7days-ret',
-                startWindow: Duration.hours(1),
-            }),
-        );
+		backupPlan.addSelection(
+			's3-example-bucket',
+			{
+				resources: [
+					BackupResource.fromArn(bucket.bucketArn)
+				],
+				allowRestores: true,
+				backupSelectionName: 's3-example-bucket-only',
+			}
+		)
     }
 }
