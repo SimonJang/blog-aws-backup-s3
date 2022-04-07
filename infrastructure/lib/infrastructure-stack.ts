@@ -28,10 +28,14 @@ export class BlogS3BackupInfrastructure extends Stack {
 		Tags.of(bucket).add('backup', 'true');
 
 		const snapShotSchedule = new BackupPlanRule({
-			completionWindow: Duration.hours(12),
-			deleteAfter: Duration.days(3),
+			deleteAfter: Duration.days(7),
 			ruleName: 'daily-example-backup-7days-ret',
-			startWindow: Duration.hours(1),
+			scheduleExpression: Schedule.cron({
+				month: '*',
+				day: '*',
+				hour: '5',
+				minute: '0'
+			})
 		});
 
 		const continuousSchedule = new BackupPlanRule({
