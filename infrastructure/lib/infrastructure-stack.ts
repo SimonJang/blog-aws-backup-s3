@@ -55,9 +55,30 @@ export class BlogS3BackupInfrastructure extends Stack {
 			{
 				backupPlanName: 's3-backup-plan',
 				backupPlanRules: [
-					snapShotSchedule,
 					continuousSchedule,
 				],
+			}
+		);
+
+		const backupPlanSnapshot = new BackupPlan(
+			this,
+			's3-backup-plan-snapshot',
+			{
+				backupPlanName: 's3-backup-snapshot',
+				backupPlanRules: [
+					snapShotSchedule
+				]
+			}
+		);
+
+		backupPlanSnapshot.addSelection(
+			's3-example-bucket-snapshot',
+			{
+				resources: [
+					BackupResource.fromArn(bucket.bucketArn)
+				],
+				allowRestores: true,
+				backupSelectionName: 's3-example-bucket-only-snapshot',
 			}
 		);
 
@@ -70,6 +91,6 @@ export class BlogS3BackupInfrastructure extends Stack {
 				allowRestores: true,
 				backupSelectionName: 's3-example-bucket-only',
 			}
-		)
+		);
     }
 }
