@@ -20,7 +20,7 @@ export class BlogS3BackupInfrastructure extends Stack {
             versioned: true,
             enforceSSL: true,
             blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
-            objectOwnership: ObjectOwnership.BUCKET_OWNER_ENFORCED,
+            objectOwnership: ObjectOwnership.BUCKET_OWNER_PREFERRED,
             removalPolicy: RemovalPolicy.DESTROY,
             autoDeleteObjects: true,
         });
