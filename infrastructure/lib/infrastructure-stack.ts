@@ -69,17 +69,6 @@ export class BlogS3BackupInfrastructure extends Stack {
 			}
 		);
 
-		backupPlanSnapshot.addSelection(
-			's3-example-bucket-snapshot',
-			{
-				resources: [
-					BackupResource.fromArn(bucket.bucketArn)
-				],
-				allowRestores: true,
-				backupSelectionName: 's3-example-bucket-only-snapshot',
-			}
-		);
-
 		const backupPlanRole = new Role(this, 's3-example-bucket-backup-role', {
             assumedBy: new ServicePrincipal('backup.amazonaws.com'),
         });
@@ -216,6 +205,18 @@ export class BlogS3BackupInfrastructure extends Stack {
 				allowRestores: true,
 				backupSelectionName: 's3-example-image-bucket-backup',
 				role: backupPlanRole
+			}
+		);
+
+        backupPlanSnapshot.addSelection(
+			's3-example-bucket-snapshot',
+			{
+				resources: [
+					BackupResource.fromArn(bucket.bucketArn)
+				],
+				allowRestores: true,
+				backupSelectionName: 's3-example-bucket-only-snapshot-v2',
+                role: backupPlanRole
 			}
 		);
     }
