@@ -1,4 +1,4 @@
-import {Stack, StackProps, RemovalPolicy, Duration, Tags} from 'aws-cdk-lib';
+import {Stack, StackProps, RemovalPolicy, Duration} from 'aws-cdk-lib';
 import {Construct} from 'constructs';
 import {Bucket, BlockPublicAccess, ObjectOwnership} from 'aws-cdk-lib/aws-s3';
 import {BackupPlan, BackupPlanRule, BackupResource} from 'aws-cdk-lib/aws-backup';
@@ -26,12 +26,12 @@ export class BlogS3BackupInfrastructure extends Stack {
         });
 
 		const snapShotSchedule = new BackupPlanRule({
-			deleteAfter: Duration.days(7),
+			deleteAfter: Duration.days(90),
 			ruleName: 'daily-example-backup-7days-ret',
 			scheduleExpression: Schedule.cron({
 				month: '*',
 				day: '*',
-				hour: '21',
+				hour: '*',
 				minute: '0'
 			})
 		});
@@ -39,6 +39,7 @@ export class BlogS3BackupInfrastructure extends Stack {
 		const continuousSchedule = new BackupPlanRule({
 			enableContinuousBackup: true,
 			ruleName: 'pitr-s3',
+			deleteAfter: Duration.days(35),
 			scheduleExpression: Schedule.cron({
 				month: '*',
 				day: '*',
@@ -54,18 +55,8 @@ export class BlogS3BackupInfrastructure extends Stack {
 				backupPlanName: 's3-backup-plan',
 				backupPlanRules: [
 					continuousSchedule,
-				],
-			}
-		);
-
-		const backupPlanSnapshot = new BackupPlan(
-			this,
-			's3-backup-plan-snapshot',
-			{
-				backupPlanName: 's3-backup-snapshot',
-				backupPlanRules: [
 					snapShotSchedule
-				]
+				],
 			}
 		);
 
@@ -205,18 +196,6 @@ export class BlogS3BackupInfrastructure extends Stack {
 				allowRestores: true,
 				backupSelectionName: 's3-example-image-bucket-backup',
 				role: backupPlanRole
-			}
-		);
-
-        backupPlanSnapshot.addSelection(
-			's3-example-bucket-snapshot',
-			{
-				resources: [
-					BackupResource.fromArn(bucket.bucketArn)
-				],
-				allowRestores: true,
-				backupSelectionName: 's3-example-bucket-only-snapshot-v2',
-                role: backupPlanRole
 			}
 		);
     }
